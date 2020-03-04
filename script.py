@@ -3,10 +3,16 @@ from prometheus_client.core import GaugeMetricFamily, REGISTRY
 from prometheus_client import start_http_server
 from binance.client import Client
 
+API_KEY = "hQFQVuu78HvooYCQh0vvGs7RRkscDvCMaTnESBLXWZvcCDWGnLnkL6kNCAEsbeHS"
+API_SECRET = "9FS3yUCQD6Ancz8FqhTfbrPe65vbU2nqGA5wbE7laLJtHuS8U9y7q4grxW3bzs7c"
+client = Client(API_KEY, API_SECRET)
+
+# there is no lending endpoint api by far, so this is a tradeoff resort
+client.API_URL = 'https://api.binance.com/sapi'
+client.PRIVATE_API_VERSION = "v1"
+
 
 class JenkinsCollector(object):
-
-    # def __init__(self):
 
     def collect(self):
         metric_avgAnnualInterestRate = GaugeMetricFamily(
@@ -24,15 +30,7 @@ class JenkinsCollector(object):
             'Binance API lending upLimit',
             labels=["asset"])
 
-        API_KEY = "hQFQVuu78HvooYCQh0vvGs7RRkscDvCMaTnESBLXWZvcCDWGnLnkL6kNCAEsbeHS"
-        API_SECRET = "9FS3yUCQD6Ancz8FqhTfbrPe65vbU2nqGA5wbE7laLJtHuS8U9y7q4grxW3bzs7c"
-
-        client = Client(API_KEY, API_SECRET)
         params = {}  # {'status': 'ALL'}
-
-        # there is no lending endpoint api by far, so this is a tradeoff resort
-        client.API_URL = 'https://api.binance.com/sapi'
-        client.PRIVATE_API_VERSION = "v1"
 
         lendings = client._get("lending/daily/product/list",
                                True, client.PUBLIC_API_VERSION, data=params)
@@ -55,6 +53,7 @@ class JenkinsCollector(object):
 
 
 if __name__ == '__main__':
+
     REGISTRY.register(JenkinsCollector())
     start_http_server(5000)
     while True:
