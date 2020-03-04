@@ -50,6 +50,6 @@ class JenkinsCollector(object):
 
 if __name__ == '__main__':
     REGISTRY.register(JenkinsCollector())
-    start_http_server(9118)
+    start_http_server(5000)
     while True:
         time.sleep(10)
