@@ -2,9 +2,20 @@ import time
 from prometheus_client.core import GaugeMetricFamily, REGISTRY
 from prometheus_client import start_http_server
 from binance.client import Client
+import configparser
 
-API_KEY = "hQFQVuu78HvooYCQh0vvGs7RRkscDvCMaTnESBLXWZvcCDWGnLnkL6kNCAEsbeHS"
-API_SECRET = "9FS3yUCQD6Ancz8FqhTfbrPe65vbU2nqGA5wbE7laLJtHuS8U9y7q4grxW3bzs7c"
+# reads the configuration from settings file
+config = configparser.ConfigParser()
+
+try:
+    config.read('config.ini')
+except:
+    print('Error! Please make sure that "config.ini" file exists and properly set.')
+    exit(1)
+
+API_KEY = config['api']['API_KEY']
+API_SECRET = config['api']['API_SECRET']
+
 client = Client(API_KEY, API_SECRET)
 
 # lending endpoint is not implemented in the package,
