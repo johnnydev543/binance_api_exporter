@@ -3,6 +3,9 @@ from prometheus_client.core import GaugeMetricFamily, REGISTRY
 from prometheus_client import start_http_server
 from binance.client import Client
 import configparser
+import requests
+import json
+
 
 # reads the configuration from settings file
 config = configparser.ConfigParser()
@@ -23,9 +26,32 @@ client = Client(API_KEY, API_SECRET)
 client.API_URL = 'https://api.binance.com/sapi'
 client.PRIVATE_API_VERSION = "v1"
 
-class BinanceLendingsCollector(object):
+def BinanceAPITickerPrice(symbol):
+
+    TARGET_URL = "https://api.binance.com/api/v3/ticker/price?symbol=" + symbol
+    resp = requests.get(TARGET_URL)
+    j = json.loads(resp.text)
+    price = j.get('price', None)
+
+    return price
+
+class BinanceAPICollector(object):
 
     def collect(self):
+
+        tickers = ['BTCUSDT', 'ETHUSDT']
+
+        ticker_metrics = GaugeMetricFamily(
+            'binance_ticker_price',
+            'Binance API ticker price',
+            labels=['symbol']
+        )
+
+        for t in tickers:
+            price = BinanceAPITickerPrice(t)
+            ticker_metrics.add_metric([t], price)
+
+        yield ticker_metrics
 
         params = {}
         lendings = client._get("lending/daily/product/list",
@@ -34,11 +60,11 @@ class BinanceLendingsCollector(object):
         # The metrics we want to export.
         statuses = ['avgAnnualInterestRate', 'purchasedAmount', 'upLimit']
 
-        metrics = {}
+        lending_metrics = {}
 
         # use "for loop" to create gauge list
         for s in statuses:
-            metrics[s] = GaugeMetricFamily(
+            lending_metrics[s] = GaugeMetricFamily(
                 'binance_lending_{0}'.format(s),
                 'Binance API lendings product ' + s + ' data',
                 labels=["asset"])
@@ -49,15 +75,15 @@ class BinanceLendingsCollector(object):
 
             for key in product:
                 if key in statuses:
-                    metrics[key].add_metric([asset_name], product.get(key, 0))
+                    lending_metrics[key].add_metric([asset_name], product.get(key, 0))
 
-        for m in metrics.values():
+        for m in lending_metrics.values():
             yield m
 
 
 if __name__ == "__main__":
 
-    REGISTRY.register(BinanceLendingsCollector())
+    REGISTRY.register(BinanceAPICollector())
     start_http_server(5000)
     while True:
         time.sleep(10)
