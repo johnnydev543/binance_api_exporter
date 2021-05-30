@@ -1,4 +1,4 @@
-import time
+import time, os
 from prometheus_client.core import GaugeMetricFamily, REGISTRY
 from prometheus_client import start_http_server
 from binance.client import Client
@@ -9,9 +9,9 @@ import json
 
 # reads the configuration from settings file
 config = configparser.ConfigParser()
-
+config_file = os.path.join(os.path.dirname(__file__), 'config.ini') 
 try:
-    config.read('config.ini')
+    config.read(config_file)
 except:
     print('Error! Please make sure that "config.ini" file exists and properly set.')
     exit(1)
