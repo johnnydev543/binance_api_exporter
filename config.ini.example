@@ -3,3 +3,7 @@
 [api]
 API_KEY = 
 API_SECRET = 
+
+[exporter]
+ticker = yes
+lending = yes

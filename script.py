@@ -16,8 +16,10 @@ except:
     print('Error! Please make sure that "config.ini" file exists and properly set.')
     exit(1)
 
-API_KEY = config['api']['API_KEY']
-API_SECRET = config['api']['API_SECRET']
+API_KEY          = config['api']['API_KEY']
+API_SECRET       = config['api']['API_SECRET']
+EXPORTER_TICKER  = config['exporter']['ticker']
+EXPORTER_LENDING = config['exporter']['lending']
 
 client = Client(API_KEY, API_SECRET)
 
@@ -25,45 +27,49 @@ class BinanceAPICollector(object):
 
     def collect(self):
 
-        tickers = ['BTCUSDT', 'ETHUSDT']
+        if EXPORTER_TICKER == 'yes':
 
-        ticker_metrics = GaugeMetricFamily(
-            'binance_ticker_price',
-            'Binance API ticker price',
-            labels=['symbol']
-        )
+            tickers = ['BTCUSDT', 'ETHUSDT']
 
-        for t in tickers:
-            ticker = client.get_symbol_ticker(symbol=t)
-            price = ticker.get('price', None)
-            ticker_metrics.add_metric([t], price)
+            ticker_metrics = GaugeMetricFamily(
+                'binance_ticker_price',
+                'Binance API ticker price',
+                labels=['symbol']
+            )
 
-        yield ticker_metrics
+            for t in tickers:
+                ticker = client.get_symbol_ticker(symbol=t)
+                price = ticker.get('price', None)
+                ticker_metrics.add_metric([t], price)
 
-        lendings = client.get_lending_product_list(timestamp=time.time())
+            yield ticker_metrics
 
-        # The metrics we want to export.
-        statuses = ['avgAnnualInterestRate', 'purchasedAmount', 'upLimit']
+        if EXPORTER_LENDING == 'yes':
 
-        lending_metrics = {}
+            lendings = client.get_lending_product_list(timestamp=time.time())
 
-        # use "for loop" to create gauge list
-        for s in statuses:
-            lending_metrics[s] = GaugeMetricFamily(
-                'binance_lending_{0}'.format(s),
-                'Binance API lendings product ' + s + ' data',
-                labels=["asset"])
+            # The metrics we want to export.
+            statuses = ['avgAnnualInterestRate', 'purchasedAmount', 'upLimit']
 
-        # just get the value which only in the statuses list
-        for product in lendings:
-            asset_name = product.get('asset')
+            lending_metrics = {}
 
-            for key in product:
-                if key in statuses:
-                    lending_metrics[key].add_metric([asset_name], product.get(key, 0))
+            # use "for loop" to create gauge list
+            for s in statuses:
+                lending_metrics[s] = GaugeMetricFamily(
+                    'binance_lending_{0}'.format(s),
+                    'Binance API lendings product ' + s + ' data',
+                    labels=["asset"])
 
-        for m in lending_metrics.values():
-            yield m
+            # just get the value which only in the statuses list
+            for product in lendings:
+                asset_name = product.get('asset')
+
+                for key in product:
+                    if key in statuses:
+                        lending_metrics[key].add_metric([asset_name], product.get(key, 0))
+
+            for m in lending_metrics.values():
+                yield m
 
 
 if __name__ == "__main__":
