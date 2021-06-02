@@ -21,20 +21,6 @@ API_SECRET = config['api']['API_SECRET']
 
 client = Client(API_KEY, API_SECRET)
 
-# lending endpoint is not implemented in the package,
-# so we need to force it to use the url and version we want
-client.API_URL = 'https://api.binance.com/sapi'
-client.PRIVATE_API_VERSION = "v1"
-
-def BinanceAPITickerPrice(symbol):
-
-    TARGET_URL = "https://api.binance.com/api/v3/ticker/price?symbol=" + symbol
-    resp = requests.get(TARGET_URL)
-    j = json.loads(resp.text)
-    price = j.get('price', None)
-
-    return price
-
 class BinanceAPICollector(object):
 
     def collect(self):
@@ -48,14 +34,13 @@ class BinanceAPICollector(object):
         )
 
         for t in tickers:
-            price = BinanceAPITickerPrice(t)
+            ticker = client.get_symbol_ticker(symbol=t)
+            price = ticker.get('price', None)
             ticker_metrics.add_metric([t], price)
 
         yield ticker_metrics
 
-        params = {}
-        lendings = client._get("lending/daily/product/list",
-                               True, client.PUBLIC_API_VERSION, data=params)
+        lendings = client.get_lending_product_list(timestamp=time.time())
 
         # The metrics we want to export.
         statuses = ['avgAnnualInterestRate', 'purchasedAmount', 'upLimit']
