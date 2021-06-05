@@ -20,6 +20,7 @@ API_KEY          = config['api']['API_KEY']
 API_SECRET       = config['api']['API_SECRET']
 EXPORTER_TICKER  = config['exporter']['ticker']
 EXPORTER_LENDING = config['exporter']['lending']
+EXPORTER_CUSTOMIZED_FIXED = config['exporter']['customized_fixed']
 
 client = Client(API_KEY, API_SECRET)
 
@@ -71,6 +72,45 @@ class BinanceAPICollector(object):
             for m in lending_metrics.values():
                 yield m
 
+
+        if EXPORTER_CUSTOMIZED_FIXED == 'yes':
+            projects = client.get_fixed_activity_project_list(
+                    type='CUSTOMIZED_FIXED',
+                    status='SUBSCRIBABLE',
+                    timestamp=time.time()
+                    )
+            for project in projects:
+                # status = project.get('status', None)
+                asset         = project.get('asset', None)
+                duration      = project.get('duration', None)
+                lotSize       = project.get('lotSize', None)
+                lotsPurchased = project.get('lotsPurchased', None)
+                lotsUpLimit   = project.get('lotsUpLimit', None)
+                projectId     = project.get('projectId', None)
+
+                # print(duration, lotsPurchased, lotsUpLimit, projectId)
+
+                # purchase_availability = lotsUpLimit - lotsPurchased
+                customized_fixed_purchased_metrics = GaugeMetricFamily(
+                    'binance_customized_fixed_purchased',
+                    'Binance API Customized Fixed Project ' + projectId + ' purchased data',
+                    labels=['projectId', 'duration', 'asset']
+                )
+                customized_fixed_uplimit_metrics = GaugeMetricFamily(
+                    'binance_customized_fixed_uplimit',
+                    'Binance API Customized Fixed Project ' + projectId + ' uplimit data',
+                    labels=['projectId', 'duration', 'asset']
+                )
+
+                purchased = int(lotsPurchased) * int(lotSize)
+                uplimit = int(lotsUpLimit) * int(lotSize)
+                # print(purchased, uplimit, int(lotSize))
+
+                customized_fixed_purchased_metrics.add_metric([projectId, str(duration), asset], purchased)
+                customized_fixed_uplimit_metrics.add_metric([projectId, str(duration), asset], uplimit)
+
+                yield customized_fixed_purchased_metrics
+                yield customized_fixed_uplimit_metrics
 
 if __name__ == "__main__":
 

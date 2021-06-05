@@ -5,5 +5,6 @@ API_KEY =
 API_SECRET = 
 
 [exporter]
-ticker = yes
-lending = yes
+ticker = no
+lending = no
+customized_fixed = yes
