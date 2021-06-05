@@ -76,10 +76,10 @@ class BinanceAPICollector(object):
         if EXPORTER_CUSTOMIZED_FIXED == 'yes':
             projects = client.get_fixed_activity_project_list(
                     type='CUSTOMIZED_FIXED',
-                    status='SUBSCRIBABLE',
+                    status='ALL',
                     timestamp=time.time()
                     )
-
+            # print(projects)
             customized_fixed_purchased_metrics = GaugeMetricFamily(
                 'binance_customized_fixed_purchased',
                 'Binance API Customized Fixed Project purchased data',
@@ -90,6 +90,11 @@ class BinanceAPICollector(object):
                 'Binance API Customized Fixed Project uplimit data',
                 labels=['projectId', 'duration', 'asset']
             )
+            customized_fixed_rate_metrics = GaugeMetricFamily(
+                'binance_customized_fixed_rate',
+                'Binance API Customized Fixed Project interest rate data',
+                labels=['projectId', 'duration', 'asset']
+            )
 
             for project in projects:
                 asset         = project.get('asset', None)
@@ -98,16 +103,18 @@ class BinanceAPICollector(object):
                 lotsPurchased = project.get('lotsPurchased', None)
                 lotsUpLimit   = project.get('lotsUpLimit', None)
                 projectId     = project.get('projectId', None)
+                interestRate  = project.get('interestRate', None)
 
                 purchased = int(lotsPurchased) * int(lotSize)
                 uplimit = int(lotsUpLimit) * int(lotSize)
-                # print(purchased, uplimit, int(lotSize))
 
                 customized_fixed_purchased_metrics.add_metric([projectId, str(duration), asset], purchased)
                 customized_fixed_uplimit_metrics.add_metric([projectId, str(duration), asset], uplimit)
+                customized_fixed_rate_metrics.add_metric([projectId, str(duration), asset], interestRate)
 
             yield customized_fixed_purchased_metrics
             yield customized_fixed_uplimit_metrics
+            yield customized_fixed_rate_metrics
 
 if __name__ == "__main__":
 
