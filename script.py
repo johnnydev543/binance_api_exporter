@@ -79,28 +79,25 @@ class BinanceAPICollector(object):
                     status='SUBSCRIBABLE',
                     timestamp=time.time()
                     )
+
+            customized_fixed_purchased_metrics = GaugeMetricFamily(
+                'binance_customized_fixed_purchased',
+                'Binance API Customized Fixed Project purchased data',
+                labels=['projectId', 'duration', 'asset']
+            )
+            customized_fixed_uplimit_metrics = GaugeMetricFamily(
+                'binance_customized_fixed_uplimit',
+                'Binance API Customized Fixed Project uplimit data',
+                labels=['projectId', 'duration', 'asset']
+            )
+
             for project in projects:
-                # status = project.get('status', None)
                 asset         = project.get('asset', None)
                 duration      = project.get('duration', None)
                 lotSize       = project.get('lotSize', None)
                 lotsPurchased = project.get('lotsPurchased', None)
                 lotsUpLimit   = project.get('lotsUpLimit', None)
                 projectId     = project.get('projectId', None)
-
-                # print(duration, lotsPurchased, lotsUpLimit, projectId)
-
-                # purchase_availability = lotsUpLimit - lotsPurchased
-                customized_fixed_purchased_metrics = GaugeMetricFamily(
-                    'binance_customized_fixed_purchased',
-                    'Binance API Customized Fixed Project ' + projectId + ' purchased data',
-                    labels=['projectId', 'duration', 'asset']
-                )
-                customized_fixed_uplimit_metrics = GaugeMetricFamily(
-                    'binance_customized_fixed_uplimit',
-                    'Binance API Customized Fixed Project ' + projectId + ' uplimit data',
-                    labels=['projectId', 'duration', 'asset']
-                )
 
                 purchased = int(lotsPurchased) * int(lotSize)
                 uplimit = int(lotsUpLimit) * int(lotSize)
@@ -109,8 +106,8 @@ class BinanceAPICollector(object):
                 customized_fixed_purchased_metrics.add_metric([projectId, str(duration), asset], purchased)
                 customized_fixed_uplimit_metrics.add_metric([projectId, str(duration), asset], uplimit)
 
-                yield customized_fixed_purchased_metrics
-                yield customized_fixed_uplimit_metrics
+            yield customized_fixed_purchased_metrics
+            yield customized_fixed_uplimit_metrics
 
 if __name__ == "__main__":
 
