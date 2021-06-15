@@ -2,6 +2,7 @@ import time, os
 from prometheus_client.core import GaugeMetricFamily, REGISTRY
 from prometheus_client import start_http_server
 from binance.client import Client
+from binance.exceptions import BinanceAPIException
 import configparser
 import requests
 import json
@@ -39,7 +40,11 @@ class BinanceAPICollector(object):
             )
 
             for t in tickers:
-                ticker = client.get_symbol_ticker(symbol=t)
+                try:
+                    ticker = client.get_symbol_ticker(symbol=t)
+                except BinanceAPIException as e:
+                    print(e)
+
                 price = ticker.get('price', None)
                 ticker_metrics.add_metric([t], price)
 
@@ -47,7 +52,10 @@ class BinanceAPICollector(object):
 
         if EXPORTER_LENDING == 'yes':
 
-            lendings = client.get_lending_product_list(timestamp=time.time())
+            try:
+                lendings = client.get_lending_product_list(timestamp=time.time())
+            except BinanceAPIException as e:
+                print(e)
 
             # The metrics we want to export.
             statuses = ['avgAnnualInterestRate', 'purchasedAmount', 'upLimit']
@@ -74,11 +82,15 @@ class BinanceAPICollector(object):
 
 
         if EXPORTER_CUSTOMIZED_FIXED == 'yes':
-            projects = client.get_fixed_activity_project_list(
-                    type='CUSTOMIZED_FIXED',
-                    status='ALL',
-                    timestamp=time.time()
-                    )
+            try:
+                projects = client.get_fixed_activity_project_list(
+                        type='CUSTOMIZED_FIXED',
+                        status='ALL',
+                        timestamp=time.time()
+                        )
+            except BinanceAPIException as e:
+                print(e)
+
             # print(projects)
             customized_fixed_purchased_metrics = GaugeMetricFamily(
                 'binance_customized_fixed_purchased',
