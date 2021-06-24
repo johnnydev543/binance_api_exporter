@@ -90,7 +90,6 @@ class BinanceAPICollector(object):
                         )
             except BinanceAPIException as e:
                 print(e)
-
             # print(projects)
             customized_fixed_purchased_metrics = GaugeMetricFamily(
                 'binance_customized_fixed_purchased',
@@ -117,8 +116,8 @@ class BinanceAPICollector(object):
                 projectId     = project.get('projectId', None)
                 interestRate  = project.get('interestRate', None)
 
-                purchased = int(lotsPurchased) * int(lotSize)
-                uplimit = int(lotsUpLimit) * int(lotSize)
+                purchased = int(lotsPurchased) * float(lotSize)
+                uplimit = int(lotsUpLimit) * float(lotSize)
 
                 customized_fixed_purchased_metrics.add_metric([projectId, str(duration), asset], purchased)
                 customized_fixed_uplimit_metrics.add_metric([projectId, str(duration), asset], uplimit)
